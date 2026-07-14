@@ -6,6 +6,8 @@ import { cacheMaintenanceRange, simulateDmaRx, simulateDmaTx, simulateStore } fr
 import { EXPERIMENTS } from '../src/data/experiments.js'
 import { evaluateAccess, makeAxiSplitRegions, makeGuardRegions, regionContains, resolveRegion, splitSubregions, validateRegion } from '../src/model/mpu.js'
 import { settingsForExperiment, simulateExperiment } from '../src/model/simulation.js'
+import { buildSimulationTrace, nextEventTime, previousEventTime, sampleTrace, SCENE_TYPES } from '../src/model/trace.js'
+import { parseCourseState, serializeCourseState } from '../src/model/course-state.js'
 
 test('all 38 lessons are present and generate simulation frames', () => {
   assert.equal(EXPERIMENTS.length, 38)
@@ -15,6 +17,42 @@ test('all 38 lessons are present and generate simulation frames', () => {
     assert.ok(frames.length >= 3, experiment.title)
     assert.equal(['done', 'fault'].includes(frames.at(-1).status), true, experiment.title)
   }
+})
+
+test('all 38 lessons generate deterministic animation traces using all six scene types', () => {
+  const scenes = new Set()
+  for (const experiment of EXPERIMENTS) {
+    const settings = settingsForExperiment(experiment)
+    const trace = buildSimulationTrace(experiment, settings)
+    const secondTrace = buildSimulationTrace(experiment, settings)
+    scenes.add(trace.scene)
+    assert.deepEqual(trace, secondTrace, experiment.title)
+    assert.ok(trace.durationMs >= 6000 && trace.durationMs <= 12000, experiment.title)
+    assert.equal(trace.events.length, trace.chapters.length, experiment.title)
+    assert.equal(trace.events.length, trace.snapshots.length, experiment.title)
+    assert.ok(trace.events.every((event) => event.caption && event.title && event.durationMs > 0), experiment.title)
+    assert.ok(trace.events.every((event, index) => event.startMs === index * event.durationMs), experiment.title)
+    assert.deepEqual(sampleTrace(trace, trace.durationMs).state, { ...trace.outcome }, experiment.title)
+  }
+  assert.deepEqual(scenes, new Set(Object.values(SCENE_TYPES)))
+})
+
+test('trace sampling, scrubbing and semantic event stepping clamp to safe boundaries', () => {
+  const experiment = EXPERIMENTS[0]
+  const trace = buildSimulationTrace(experiment, settingsForExperiment(experiment))
+  assert.equal(sampleTrace(trace, -100).playheadMs, 0)
+  assert.equal(sampleTrace(trace, trace.durationMs + 100).playheadMs, trace.durationMs)
+  assert.equal(sampleTrace(trace, trace.events[1].startMs).activeIndex, 1)
+  assert.equal(nextEventTime(trace, 0), trace.events[1].startMs)
+  assert.equal(previousEventTime(trace, trace.events[2].startMs), trace.events[1].startMs)
+  assert.equal(nextEventTime(trace, trace.durationMs), trace.durationMs)
+})
+
+test('course progress persistence rejects malformed or stale lesson data', () => {
+  const ids = EXPERIMENTS.map((experiment) => experiment.id)
+  const stored = serializeCourseState({ completed: [ids[0], ids[0], 'removed-lesson'], lastLesson: ids[10], speed: 2, mode: 'course' })
+  assert.deepEqual(parseCourseState(stored, ids), { completed: [ids[0]], lastLesson: ids[10], speed: 2, mode: 'course' })
+  assert.deepEqual(parseCourseState('{bad json', ids), { completed: [], lastLesson: 'cache-line', speed: 1, mode: 'home' })
 })
 
 test('Armv7-M TEX/C/B teaching decoder covers the key encodings', () => {

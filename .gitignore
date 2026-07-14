@@ -12,6 +12,8 @@ dist-ssr
 *.local
 .playwright-cli
 output/playwright
+test-results
+playwright-report
 
 .vscode/*
 !.vscode/extensions.json
