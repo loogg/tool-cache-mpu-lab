@@ -1,10 +1,12 @@
 {
-  "name": "tool-template",
+  "name": "tool-cache-mpu-lab",
   "private": true,
   "version": "0.1.0",
+  "description": "面向 Cortex-M7 与 GD32H75E 的 Cache、MPU、DMA 一致性交互教学实验室",
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "test": "node --test",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview"

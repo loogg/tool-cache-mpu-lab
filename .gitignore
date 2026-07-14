@@ -10,6 +10,8 @@ node_modules
 dist
 dist-ssr
 *.local
+.playwright-cli
+output/playwright
 
 .vscode/*
 !.vscode/extensions.json

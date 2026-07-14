@@ -1,27 +1,39 @@
-# Tool Template
+# Cache & MPU 交互实验室
 
-用于创建具有独立仓库、语义化版本和 GitHub Pages 发布流程的 React/Vite 工具。
+面向第一次接触 Cache、MPU 和 DMA 一致性的嵌入式开发者，通过 38 个可操作实验理解：
 
-## 从模板创建工具
+- 通用 Cache：Cache Line、Hit/Miss、局部性、WT/WB、Write Allocate、Store Buffer。
+- Cortex-M7 / Armv7-M：TEX/C/B/S、AP、XN、Region、Subregion、优先级和背景映射。
+- DMA 一致性：Clean、Invalidate、Cache Line 对齐、DMB/DSB与所有权交接。
+- GD32H75E：AXI SRAM双策略、4GB兜底禁区、外部存储器初始化和SDRAM执行代码。
 
-1. 使用 GitHub 的 **Use this template** 创建名为 `tool-<short-name>` 的公共仓库。
-2. 修改 `package.json` 中的名称和初始版本。
-3. 修改页面标题、描述、仓库链接和工具实现。
-4. 在仓库 Settings → Pages 中选择 **GitHub Actions**。
-5. 运行 `npm ci`、`npm run lint` 和 `npm run build`。
-6. 创建首个 `vX.Y.Z` 标签并推送。
+所有模拟都在浏览器本地运行，不上传任何数据。课程中的代码为教学伪代码，不是可直接复制到产品中的芯片初始化代码。
 
-部署 base 会自动使用 GitHub 仓库名，不需要为每个工具手工修改。
-
-## 版本与发布
-
-`package.json.version` 是界面版本徽标和发布校验的唯一来源。
+## 本地运行
 
 ```powershell
-npm version patch -m "chore(release): v%s"
-git push origin main --follow-tags
+npm ci
+npm run dev
 ```
 
-需要时将 `patch` 换成 `minor` 或 `major`。普通提交只运行 CI，只有 `v*.*.*` 标签发布 Pages。不要移动或复用已有标签；回滚使用新的 patch 版本。
+## 验证
 
-生成的工具发布时不需要修改 `toolbox`；只有工具名称、说明、图标、URL 或上下架状态变化时才更新首页清单。
+```powershell
+npm test
+npm run lint
+npm run build
+```
+
+模拟内核位于 `src/model/`，React界面只消费模型生成的状态事件。关键结论由Node单元测试覆盖。
+
+## 资料依据
+
+- [GigaDevice H7 Cache及MPU使用指南](https://gigadevice.feishu.cn/wiki/Tw2kwOc38i32dFkNtYecKQvHnne)
+- [Arm Cortex-M7 Technical Reference Manual](https://developer.arm.com/documentation/ddi0489/latest/)
+- [CMSIS Armv7-M MPU Defines](https://arm-software.github.io/CMSIS_6/latest/Core/group__mpu__defines.html)
+- [CMSIS Cortex-M7 D-Cache Functions](https://arm-software.github.io/CMSIS_6/latest/Core/group__Dcache__functions__m7.html)
+- [ST AN4838 - Managing MPU](https://www.st.com/resource/en/application_note/an4838-managing-memory-protection-unit-in-stm32-mcus-stmicroelectronics.pdf)
+- [ST AN4839 - Level 1 cache](https://www.st.com/resource/en/application_note/an4839-level-1-cache-on-stm32f7-series-and-stm32h7-series-stmicroelectronics.pdf)
+- [GD32H75E Datasheet](https://www.gd32mcu.com/download/down/document_id/652/path_type/1)
+
+具体芯片应用还必须结合相应版本的数据手册、参考手册和勘误表。
